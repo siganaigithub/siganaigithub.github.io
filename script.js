@@ -233,4 +233,18 @@ document.addEventListener("click", e => {
 });
 $("backFromDetail").onclick = () => showView("archive");
 
-init();
+// Start after DOM is ready. Catch startup errors so diagnostics are visible.
+function showFatalError(error) {
+  console.error("BLUE_LOG startup error:", error);
+  const msg = document.createElement("div");
+  msg.style.cssText = "position:fixed;z-index:99999;left:12px;right:12px;bottom:12px;padding:14px;background:#6b1020;color:white;border:1px solid #ff7891;border-radius:8px;font:14px sans-serif;white-space:pre-wrap";
+  msg.textContent = "BLUE_LOGでJavaScriptエラーが発生しました: " + (error?.message || error);
+  document.body.appendChild(msg);
+}
+window.addEventListener("error", e => showFatalError(e.error || e.message));
+window.addEventListener("unhandledrejection", e => showFatalError(e.reason));
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", () => init().catch(showFatalError), { once: true });
+} else {
+  init().catch(showFatalError);
+}
