@@ -1,6 +1,6 @@
 # BLUE//LOG
 
-
+https://siganaigithub.github.io
 
 ## 構成
 
