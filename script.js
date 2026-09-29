@@ -1,6 +1,6 @@
 let posts = [];
 let currentDetailId = null;
-let supabase = null;
+let sbClient = null;
 let currentUser = null;
 
 const $ = (id) => document.getElementById(id);
@@ -54,14 +54,14 @@ async function init() {
     return;
   }
   try {
-    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
     });
-    const { data, error } = await supabase.auth.getSession();
+    const { data, error } = await sbClient.auth.getSession();
     if (error) throw error;
     currentUser = data.session?.user || null;
     updateAuthUI();
-    supabase.auth.onAuthStateChange((_event, session) => {
+    sbClient.auth.onAuthStateChange((_event, session) => {
       currentUser = session?.user || null;
       updateAuthUI();
     });
@@ -78,7 +78,7 @@ function showSetupWarning(message = "Supabaseの設定が必要です。") {
 }
 
 async function loadPosts() {
-  const { data, error } = await supabase.from("posts").select("*, comments(*)").order("created_at", {ascending:false});
+  const { data, error } = await sbClient.from("posts").select("*, comments(*)").order("created_at", {ascending:false});
   if (error) {
     console.error(error);
     toast("記事の読み込みに失敗しました");
@@ -171,9 +171,9 @@ $("postForm").onsubmit = async e => {
   const data = {title:$("postTitle").value.trim(), category:$("postCategory").value, excerpt:$("postExcerpt").value.trim(), body:$("postBody").value.trim()};
   let error;
   if (id) {
-    ({error} = await supabase.from("posts").update({...data, updated_at:new Date().toISOString()}).eq("id", id));
+    ({error} = await sbClient.from("posts").update({...data, updated_at:new Date().toISOString()}).eq("id", id));
   } else {
-    ({error} = await supabase.from("posts").insert(data));
+    ({error} = await sbClient.from("posts").insert(data));
   }
   if (error) { console.error(error); toast("保存に失敗しました"); return; }
   await loadPosts(); resetEditor(); toast(id ? "記事を更新しました" : "記事を公開しました");
@@ -185,7 +185,7 @@ async function deletePost(id) {
   if (!requireAdmin()) return;
   const post = posts.find(p => p.id === id); if (!post) return;
   if (!confirm(`「${post.title}」を削除しますか？\nこの操作は元に戻せません。`)) return;
-  const {error} = await supabase.from("posts").delete().eq("id", id);
+  const {error} = await sbClient.from("posts").delete().eq("id", id);
   if (error) { console.error(error); toast("削除に失敗しました"); return; }
   await loadPosts(); showView("archive"); toast("記事を削除しました");
 }
@@ -193,7 +193,7 @@ async function deletePost(id) {
 async function addComment(e) {
   e.preventDefault();
   const payload = {post_id:currentDetailId, name:$("commentName").value.trim(), text:$("commentText").value.trim()};
-  const {error} = await supabase.from("comments").insert(payload);
+  const {error} = await sbClient.from("comments").insert(payload);
   if (error) { console.error(error); toast("コメント投稿に失敗しました"); return; }
   await loadPosts(); openDetail(currentDetailId); toast("コメントを投稿しました");
 }
@@ -202,20 +202,20 @@ function renderAll() { renderHome(); renderArchive(); }
 
 $("loginForm").onsubmit = async e => {
   e.preventDefault();
-  if (!supabase) {
+  if (!sbClient) {
     $("loginMessage").textContent = "Supabase未設定です。config.js に接続情報を設定してください。";
     return;
   }
   $("loginMessage").textContent = "ログイン中...";
-  const {error} = await supabase.auth.signInWithPassword({email:$("loginEmail").value.trim(), password:$("loginPassword").value});
+  const {error} = await sbClient.auth.signInWithPassword({email:$("loginEmail").value.trim(), password:$("loginPassword").value});
   if (error) { $("loginMessage").textContent = "ログインに失敗しました。メールアドレスまたはパスワードを確認してください。"; return; }
   $("loginDialog").close(); $("loginForm").reset(); toast("管理者としてログインしました");
 };
 $("loginOpen").onclick = () => { $("loginMessage").textContent=""; $("loginDialog").showModal(); };
 $("loginClose").onclick = () => $("loginDialog").close();
 $("logoutBtn").onclick = async () => {
-  if (!supabase) return;
-  await supabase.auth.signOut(); showView("home"); toast("ログアウトしました");
+  if (!sbClient) return;
+  await sbClient.auth.signOut(); showView("home"); toast("ログアウトしました");
 };
 
 $("cancelEdit").onclick = () => { resetEditor(); showView("archive"); };
@@ -233,18 +233,4 @@ document.addEventListener("click", e => {
 });
 $("backFromDetail").onclick = () => showView("archive");
 
-// Start after DOM is ready. Catch startup errors so diagnostics are visible.
-function showFatalError(error) {
-  console.error("BLUE_LOG startup error:", error);
-  const msg = document.createElement("div");
-  msg.style.cssText = "position:fixed;z-index:99999;left:12px;right:12px;bottom:12px;padding:14px;background:#6b1020;color:white;border:1px solid #ff7891;border-radius:8px;font:14px sans-serif;white-space:pre-wrap";
-  msg.textContent = "BLUE_LOGでJavaScriptエラーが発生しました: " + (error?.message || error);
-  document.body.appendChild(msg);
-}
-window.addEventListener("error", e => showFatalError(e.error || e.message));
-window.addEventListener("unhandledrejection", e => showFatalError(e.reason));
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", () => init().catch(showFatalError), { once: true });
-} else {
-  init().catch(showFatalError);
-}
+init();
