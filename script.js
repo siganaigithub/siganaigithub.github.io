@@ -43,24 +43,38 @@ function ensureConfigured() {
 }
 
 async function init() {
+  // ナビゲーション等のUIはSupabase未設定でも動作させる
   if (!ensureConfigured()) {
     showSetupWarning();
+    updateAuthUI();
     return;
   }
-  supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  const { data } = await supabase.auth.getSession();
-  currentUser = data.session?.user || null;
-  updateAuthUI();
-  supabase.auth.onAuthStateChange((_event, session) => {
-    currentUser = session?.user || null;
+  if (!window.supabase?.createClient) {
+    showSetupWarning("Supabaseライブラリを読み込めませんでした。ネットワーク/CDN設定を確認してください。");
+    return;
+  }
+  try {
+    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+    });
+    const { data, error } = await supabase.auth.getSession();
+    if (error) throw error;
+    currentUser = data.session?.user || null;
     updateAuthUI();
-  });
-  await loadPosts();
+    supabase.auth.onAuthStateChange((_event, session) => {
+      currentUser = session?.user || null;
+      updateAuthUI();
+    });
+    await loadPosts();
+  } catch (error) {
+    console.error("Supabase initialization failed:", error);
+    showSetupWarning("Supabaseへの接続に失敗しました。config.js のURL/keyとSupabase設定を確認してください。");
+  }
 }
 
-function showSetupWarning() {
-  $("latestPosts").innerHTML = `<div style="grid-column:1/-1;padding:50px;color:#668196"><strong>Supabaseの設定が必要です。</strong><br>config.js に Project URL と anon key を設定してください。</div>`;
-  $("archivePosts").innerHTML = `<div style="padding:50px;color:#668196">Supabase未設定</div>`;
+function showSetupWarning(message = "Supabaseの設定が必要です。") {
+  $("latestPosts").innerHTML = `<div style="grid-column:1/-1;padding:50px;color:#668196"><strong>${escapeHTML(message)}</strong><br>config.js に Supabase Project URL と publishable/anon key を設定してください。</div>`;
+  $("archivePosts").innerHTML = `<div style="padding:50px;color:#668196">Supabase未接続のため記事を取得できません。</div>`;
 }
 
 async function loadPosts() {
@@ -188,6 +202,10 @@ function renderAll() { renderHome(); renderArchive(); }
 
 $("loginForm").onsubmit = async e => {
   e.preventDefault();
+  if (!supabase) {
+    $("loginMessage").textContent = "Supabase未設定です。config.js に接続情報を設定してください。";
+    return;
+  }
   $("loginMessage").textContent = "ログイン中...";
   const {error} = await supabase.auth.signInWithPassword({email:$("loginEmail").value.trim(), password:$("loginPassword").value});
   if (error) { $("loginMessage").textContent = "ログインに失敗しました。メールアドレスまたはパスワードを確認してください。"; return; }
@@ -195,7 +213,10 @@ $("loginForm").onsubmit = async e => {
 };
 $("loginOpen").onclick = () => { $("loginMessage").textContent=""; $("loginDialog").showModal(); };
 $("loginClose").onclick = () => $("loginDialog").close();
-$("logoutBtn").onclick = async () => { await supabase.auth.signOut(); showView("home"); toast("ログアウトしました"); };
+$("logoutBtn").onclick = async () => {
+  if (!supabase) return;
+  await supabase.auth.signOut(); showView("home"); toast("ログアウトしました");
+};
 
 $("cancelEdit").onclick = () => { resetEditor(); showView("archive"); };
 $("postBody").addEventListener("input", updateCharCount);
