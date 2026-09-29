@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BLUE//LOG - Stylish Blog</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="noise"></div>
+  <div class="diagonal diagonal-a"></div>
+  <div class="diagonal diagonal-b"></div>
+
+  <header class="topbar">
+    <a class="logo" href="#" data-view="home">
+      <span class="logo-mark">B</span>
+      <span>BLUE<span class="slash">//</span>LOG</span>
+    </a>
+    <nav>
+      <button class="nav-btn active" data-view="home">HOME</button>
+      <button class="nav-btn" data-view="archive">ARCHIVE</button>
+      <button class="nav-btn" data-view="write">WRITE</button>
+    </nav>
+    <div class="account-area"><button class="login-btn" id="loginOpen">ADMIN LOGIN</button><button class="logout-btn" id="logoutBtn" hidden>LOGOUT</button><button class="search-open" id="searchOpen" aria-label="検索">⌕</button></div>
+  </header>
+
+  <main>
+    <section id="homeView" class="view active-view">
+      <div class="hero">
+        <div class="hero-copy">
+          <div class="eyebrow">PERSONAL DIGITAL MAGAZINE</div>
+          <h1>MAKE YOUR<br><span>OWN STORY.</span></h1>
+          <p>日常、ゲーム、創作、考えたこと。<br>好きな言葉を、好きなスタイルで残そう。</p>
+          <button class="primary-btn" data-view="write">NEW POST <span>↗</span></button>
+        </div>
+        <div class="hero-art">
+          <div class="orbit"></div>
+          <div class="hero-card">
+            <span>NO. <b>001</b></span>
+            <strong>YOUR<br>STORY</strong>
+            <small>WRITE / CREATE / SHARE</small>
+          </div>
+          <div class="vertical-text">BLUE LOG / EST. 2026</div>
+        </div>
+      </div>
+
+      <div class="section-head">
+        <div>
+          <span class="section-kicker">LATEST STORIES</span>
+          <h2>最新の投稿</h2>
+        </div>
+        <button class="text-btn" data-view="archive">VIEW ALL →</button>
+      </div>
+      <div id="latestPosts" class="post-grid"></div>
+    </section>
+
+    <section id="archiveView" class="view">
+      <div class="page-title">
+        <span class="section-kicker">ARCHIVE / ALL POSTS</span>
+        <h1>POST<br><span>ARCHIVE.</span></h1>
+      </div>
+      <div class="archive-toolbar">
+        <label class="search-box">
+          <span>⌕</span>
+          <input id="archiveSearch" type="search" placeholder="記事を検索...">
+        </label>
+        <select id="categoryFilter">
+          <option value="all">ALL CATEGORIES</option>
+          <option value="日常">日常</option>
+          <option value="創作">創作</option>
+          <option value="ゲーム">ゲーム</option>
+          <option value="雑記">雑記</option>
+        </select>
+      </div>
+      <div id="archivePosts" class="archive-list"></div>
+    </section>
+
+    <section id="writeView" class="view">
+      <div class="page-title compact">
+        <span class="section-kicker">CREATE / EDIT</span>
+        <h1 id="editorHeading">NEW<br><span>POST.</span></h1>
+      </div>
+      <form id="postForm" class="editor">
+        <input type="hidden" id="postId">
+        <div class="editor-row">
+          <input id="postTitle" class="title-input" required maxlength="80" placeholder="記事のタイトル">
+          <select id="postCategory">
+            <option value="日常">日常</option>
+            <option value="創作">創作</option>
+            <option value="ゲーム">ゲーム</option>
+            <option value="雑記">雑記</option>
+          </select>
+        </div>
+        <input id="postExcerpt" class="excerpt-input" maxlength="140" placeholder="記事の概要（任意）">
+        <textarea id="postBody" required placeholder="ここに本文を書いてください。"></textarea>
+        <div class="editor-footer">
+          <span id="charCount">0 characters</span>
+          <div>
+            <button type="button" class="secondary-btn" id="cancelEdit">CANCEL</button>
+            <button class="primary-btn" type="submit">PUBLISH <span>↗</span></button>
+          </div>
+        </div>
+      </form>
+    </section>
+
+    <section id="detailView" class="view">
+      <button class="back-btn" id="backFromDetail">← BACK</button>
+      <article id="detailArticle" class="detail"></article>
+    </section>
+  </main>
+
+  <footer>
+    <span>BLUE//LOG</span>
+    <span>CREATE YOUR OWN FREQUENCY.</span>
+  </footer>
+
+  <dialog id="searchDialog">
+    <form method="dialog" class="search-dialog">
+      <button class="dialog-close" value="cancel">×</button>
+      <span class="section-kicker">SEARCH</span>
+      <h2>WHAT ARE<br>YOU LOOKING FOR?</h2>
+      <input id="globalSearch" autofocus placeholder="キーワードを入力...">
+      <button id="globalSearchSubmit" class="primary-btn" value="default">SEARCH ↗</button>
+    </form>
+  </dialog>
+
+  <dialog id="loginDialog">
+    <form id="loginForm" class="search-dialog">
+      <button type="button" class="dialog-close" id="loginClose">×</button>
+      <span class="section-kicker">ADMIN ACCESS</span>
+      <h2>WELCOME<br>BACK.</h2>
+      <input id="loginEmail" type="email" autocomplete="email" placeholder="メールアドレス" required>
+      <input id="loginPassword" type="password" autocomplete="current-password" placeholder="パスワード" required>
+      <button class="primary-btn" type="submit">LOGIN ↗</button>
+      <p id="loginMessage" class="login-message"></p>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast"></div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
